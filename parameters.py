@@ -30,4 +30,11 @@ class SimulationResult:
     move_count: float
 
     def get_fitness(self) -> float:
-        return 1
+        return (
+            10 * self.transported_people
+            + (60 - self.elapsed_time)
+            + 10 * self.transported_per_second
+            - self.average_waiting_time
+            - self.max_waiting_time
+            + self.move_count
+        )
