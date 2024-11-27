@@ -64,22 +64,30 @@ class ElevatorSaga:
                     },
                     update: function(dt, elevators, floors) {},
                     
-                    getInput: function (elevator, floors) {
+                    getInput: function (elevators, floors) {
                         const inputs = [];
-                        inputs.push(elevator.currentFloor());
-                        inputs.push(elevator.maxPassengerCount());
-                        inputs.push(elevator.loadFactor());
-                        inputs.push(this.directionMap[elevator.destinationDirection()] || 0);
-                        inputs.push(Number(elevator.goingUpIndicator()));
-                        inputs.push(Number(elevator.goingDownIndicator()));
+                        for(let i = 0; i < 4; i++) {
+                            if (elevators.count > i) {
+                                inputs.push(elevators[i].currentFloor());
+                                inputs.push(this.directionMap[elevators[i].destinationDirection()] || 0);
+                                inputs.push(elevators[i].loadFactor());
+                                inputs.push(elevators[i].maxPassengerCount());
+                                inputs.push(elevators[i].goingUpIndicator());
+                                inputs.push(elevators[i].goingDownIndicator());
+                            } else {
+                                for(let j = 0; j < 6; j++){
+                                    inputs.push(-1);
+                                }
+                            }
+                        }
                         pressedFloors = elevator.getPressedFloors();
                         for (const floor of floors) {
                             inputs.push(pressedFloors.includes(floor.level) ? 1 : 0);
                         };
                         for (let i=floors.length; i < 7; i++) {
-                            inputs.push(0);
+                            inputs.push(-1);
                         };
-                        
+                        inputs.push(floors.count);
                         return inputs
                     },
                         
@@ -123,10 +131,10 @@ class ElevatorSaga:
                         return output;
                     },
                 
-                    numInputs: 13,
-                    numHidden1: 10,
-                    numHidden2: 10,
-                    numOutputs: 2,
+                    numInputs: 32,
+                    numHidden1: 64,
+                    numHidden2: 16,
+                    numOutputs: 8,
                     directionMap: { up: 1, down: -1 },
                 }
                 
