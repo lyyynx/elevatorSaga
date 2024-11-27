@@ -1,19 +1,16 @@
 import random
 import time
-from typing import Generator
 
 from selenium import webdriver
-from selenium.webdriver import ActionChains
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 
 from parameters import Weights, SimulationResult
 from util import list_to_string
 
 
 class ElevatorSaga:
-    def __init__(self) -> None:
-        self.url = "https://play.elevatorsaga.com/"
+    def __init__(self, level: int = 1) -> None:
+        self.url = f"https://play.elevatorsaga.com/#challenge={level}"
         self.driver = webdriver.Firefox()
         self.driver.get(self.url)
         self._init_buttons()
@@ -27,14 +24,9 @@ class ElevatorSaga:
                 by=By.CLASS_NAME, value="fa-plus-square"
             )
             speed_up_button.click()
-            time.sleep(0.1)
+            time.sleep(0.05)
 
     def initialize_net(self):
-        ActionChains(self.driver).key_down(Keys.CONTROL).key_down("a").key_up(
-            Keys.CONTROL
-        ).key_up("a").perform()
-        ActionChains(self.driver).key_down(Keys.DELETE).key_up(Keys.DELETE).perform()
-
         weights = self._init_weights()
         self._insert_code(weights)
 
@@ -120,11 +112,9 @@ class ElevatorSaga:
                 
                         let hidden1 = dotProduct(input, weights.inputToHidden1);
                         hidden1 = addBias(hidden1, weights.hidden1Bias);
-                        // hidden1 = applyActivation(hidden1);
                         
                         let hidden2 = dotProduct(hidden1, weights.hidden1ToHidden2);
                         hidden2 = addBias(hidden2, weights.hidden2Bias);
-                        // hidden2 = applyActivation(hidden2);
                         
                         let output = dotProduct(hidden2, weights.hidden2ToOutput);
                         output = addBias(output, weights.outputBias);
@@ -195,7 +185,7 @@ class ElevatorSaga:
         hidden_2_bias = [random.uniform(-1, 1) for _ in range(10)]
         hidden_2_to_output = [[random.uniform(-1, 1) for _ in range(2)] for _ in range(10)]
         input_to_hidden_1 = [[random.uniform(-1, 1) for _ in range(10)] for _ in range(13)]
-        output_bias = [[random.uniform(-1, 1)] for _ in range(2)]
+        output_bias = [random.uniform(-1, 1) for _ in range(2)]
         # fmt: on
 
         return Weights(
@@ -206,11 +196,6 @@ class ElevatorSaga:
             input_to_hidden_1,
             output_bias,
         )
-
-
-def string_generator(text: str) -> Generator[str, None, None]:
-    for letter in text:
-        yield letter
 
 
 if __name__ == "__main__":

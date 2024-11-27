@@ -5,7 +5,7 @@ from dataclasses import dataclass
 # hidden2Bias: Array(10)                 10
 # hidden2ToOutput: Array(10) [ (2) ]     20
 # inputToHidden1: Array(13) [ (10) ]    130
-# outputBias: Array(2) [ (1) ]            2
+# outputBias: Array(2)                    2
 # -------------------------------------------
 #                                       272
 
@@ -17,7 +17,7 @@ class Weights:
     hidden_2_bias: list[float]
     hidden_2_to_output: list[list[float]]
     input_to_hidden_1: list[list[float]]
-    output_bias: list[list[float]]
+    output_bias: list[float]
 
 
 @dataclass
