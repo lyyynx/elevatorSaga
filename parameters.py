@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 
-# hidden1Bias: Array(10)                 10
-# hidden1ToHidden2: Array(10) [ (10) ]  100
-# hidden2Bias: Array(10)                 10
-# hidden2ToOutput: Array(10) [ (2) ]     20
-# inputToHidden1: Array(13) [ (10) ]    130
-# outputBias: Array(2)                    2
+# hidden1Bias: Array(64)                 64
+# hidden1ToHidden2: Array(64) [ (16) ]  1024
+# hidden2Bias: Array(16)                  16
+# hidden2ToOutput: Array(16) [ (8) ]     128
+# inputToHidden1: Array(32) [ (64) ]   2056
+# outputBias: Array(8)                    8
 # -------------------------------------------
-#                                       272
+#                                       3296
 
 
 @dataclass
@@ -31,10 +31,9 @@ class SimulationResult:
 
     def get_fitness(self) -> float:
         return (
-            10 * self.transported_people
-            + (60 - self.elapsed_time)
-            + 10 * self.transported_per_second
-            - self.average_waiting_time
-            - self.max_waiting_time
-            + self.move_count
+            # 0.6*self.transported_people*self.transported_people
+            # + 0.3*(60 - self.elapsed_time)*(60 - self.elapsed_time)
+            # # - self.average_waiting_time
+            # - self.max_waiting_time
+            + self.move_count*self.move_count
         )

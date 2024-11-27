@@ -26,9 +26,9 @@ class ElevatorSaga:
             speed_up_button.click()
             time.sleep(0.05)
 
-    def initialize_net(self):
-        weights = self._init_weights()
-        self._insert_code(weights)
+    # def initialize_net(self):
+    #     weights = self._init_weights()
+    #     self._insert_code(weights)
 
     def change_weights(self, weights: Weights) -> None:
         self._insert_code(weights)
@@ -39,104 +39,130 @@ class ElevatorSaga:
 
         new_code = (
             """{
-                    init: function(elevators, floors) {
-                        var elevator = elevators[0];
-                        const weights = {
-                            INPUTTOHIDDEN1,
-                            HIDDEN1BIAS,
-                            HIDDEN1TOHIDDEN2,
-                            HIDDEN2BIAS,
-                            HIDDEN2TOOUTPUT,
-                            OUTPUTBIAS, 
-                        };
-                
-                        elevator.on("idle", () => {
-                            const input = this.getInput(elevator, floors);
-                            const output = this.forwardPass(input, weights);
-                            console.log(output[0]);
-                            if (output[0] > 0.5) {
-                                elevator.goToFloor(Math.min(floors.length - 1, elevator.currentFloor() + 1));
-                            } else if (output[0] <= 0.5) {
-                                elevator.goToFloor(Math.max(0, elevator.currentFloor() - 1));
-                            }
-                            else {elevator.goToFloor(elevator.currentFloor())};
-                        });
-                    },
-                    update: function(dt, elevators, floors) {},
-                    
-                    getInput: function (elevators, floors) {
-                        const inputs = [];
-                        for(let i = 0; i < 4; i++) {
-                            if (elevators.count > i) {
-                                inputs.push(elevators[i].currentFloor());
-                                inputs.push(this.directionMap[elevators[i].destinationDirection()] || 0);
-                                inputs.push(elevators[i].loadFactor());
-                                inputs.push(elevators[i].maxPassengerCount());
-                                inputs.push(elevators[i].goingUpIndicator());
-                                inputs.push(elevators[i].goingDownIndicator());
-                            } else {
-                                for(let j = 0; j < 6; j++){
-                                    inputs.push(-1);
-                                }
-                            }
-                        }
-                        pressedFloors = elevator.getPressedFloors();
-                        for (const floor of floors) {
-                            inputs.push(pressedFloors.includes(floor.level) ? 1 : 0);
-                        };
-                        for (let i=floors.length; i < 7; i++) {
-                            inputs.push(-1);
-                        };
-                        inputs.push(floors.count);
-                        return inputs
-                    },
-                        
-                    sigmoid: function (x) {
-                        return 1 / (1 + Math.exp(-x));
-                    },
-                
-                    forwardPass: function (input, weights) {
-                        const dotProduct = (a, b) => {
-                            const result = [];
-                            for (let i = 0; i < b.length; i++) {
-                                let sum = 0;
-                                for (let j = 0; j < a.length; j++) {
-                                    sum += a[j] * b[i][j];
-                                }
-                                result.push(sum);
-                            }
-                            return result;
-                        };
-                
-                        const addBias = (layer, bias) => {
-                            return layer.map((val, i) => {
-                                return val + bias[i];
-                            });
-                        };
-                
-                        const applyActivation = (layer) => {
-                            return layer.map(this.sigmoid);
-                        };
-                
-                        let hidden1 = dotProduct(input, weights.inputToHidden1);
-                        hidden1 = addBias(hidden1, weights.hidden1Bias);
-                        
-                        let hidden2 = dotProduct(hidden1, weights.hidden1ToHidden2);
-                        hidden2 = addBias(hidden2, weights.hidden2Bias);
-                        
-                        let output = dotProduct(hidden2, weights.hidden2ToOutput);
-                        output = addBias(output, weights.outputBias);
-                        output = applyActivation(output);
-                
-                        return output;
-                    },
-                
-                    numInputs: 32,
-                    numHidden1: 64,
-                    numHidden2: 16,
-                    numOutputs: 8,
-                    directionMap: { up: 1, down: -1 },
+    init: function(elevators, floors) {
+
+        elevators.forEach((elevator, i) => {
+            const weights = {
+                INPUTTOHIDDEN1,
+                HIDDEN1BIAS,
+                HIDDEN1TOHIDDEN2,
+                HIDDEN2BIAS,
+                HIDDEN2TOOUTPUT,
+                OUTPUTBIAS, 
+            };
+    
+            elevator.on("idle", () => {
+                const input = this.getInput(elevators, floors, elevator);
+                const output = this.forwardPass(input, weights);
+                elevatorNo = i;
+                console.log("result: ", output[elevatorNo*2], output[elevatorNo*2+1]);
+                if (output[elevatorNo*2] > output[elevatorNo*2+1]) {
+                    elevator.goToFloor(Math.min(floors.length - 1, elevator.currentFloor() + 1));
+                } else {
+                    elevator.goToFloor(Math.max(0, elevator.currentFloor() - 1));
                 }
+            });
+        });
+    },
+    update: function(dt, elevators, floors) {},
+    
+    getInput: function (elevators, floors, elevator) {
+        const inputs = [];
+        elevators.forEach((elevator, i) => {
+            if (elevators.count > i) {
+                inputs.push(elevators[i].currentFloor());
+                inputs.push(this.directionMap[elevators[i].destinationDirection()] || 0);
+                inputs.push(elevators[i].loadFactor());
+                inputs.push(elevators[i].maxPassengerCount());
+                inputs.push(elevators[i].goingUpIndicator());
+                inputs.push(elevators[i].goingDownIndicator());
+            } else {
+                for (let j = 0; j < 6; j++) {
+                    inputs.push(-1);
+                }
+            }
+        });
+
+        for (let i = elevators.length; i < 4; i++) {
+            for (let j = 0; j < 6; j++) {
+                inputs.push(-1);
+            }
+        }
+
+        // Use the passed elevator to get pressed floors
+        const pressedFloors = elevator.getPressedFloors();
+        for (const floor of floors) {
+            inputs.push(pressedFloors.includes(floor.level) ? 1 : 0);
+        }
+
+        for (let i = floors.length; i < 7; i++) {
+            inputs.push(-1);
+        }
+
+        inputs.push(floors.length);
+        return inputs;
+    },
+        
+    sigmoid: function (x) {
+        return 1 / (1 + Math.exp(-x));
+    },
+
+    forwardPass: function (input, weights) {
+        const dotProduct = (a, b) => {
+            const result = [];
+            for (let i = 0; i < b.length; i++) {
+                let sum = 0;
+                for (let j = 0; j < a.length; j++) {
+                    sum += a[j] * b[i][j];
+                }
+                result.push(sum);
+            }
+            return result;
+        };
+
+        const addBias = (layer, bias) => {
+            return layer.map((val, i) => {
+                return val + bias[i];
+            });
+        };
+
+        const applyActivation = (layer) => {
+            return layer.map(this.sigmoid);
+        };
+
+        let hidden1 = dotProduct(input, weights.inputToHidden1);
+        console.log("input ", input);
+        console.log("weights", weights.inputToHidden1);
+        console.log("hidden1", hidden1);
+
+        hidden1 = addBias(hidden1, weights.hidden1Bias);
+        console.log("hidden1 length", hidden1.length);
+        
+        let hidden2 = dotProduct(hidden1, weights.hidden1ToHidden2);
+        console.log("hidden1tohiden2", weights.hidden1ToHidden2);
+        console.log("hidden1 length", hidden1.length);
+        console.log("hidden2 first", hidden2);
+
+        hidden2 = addBias(hidden2, weights.hidden2Bias);
+        console.log("hidden2 length", hidden2.length);
+        console.log("hidden2 bias", weights.hidden2Bias);
+        
+        let output = dotProduct(hidden2, weights.hidden2ToOutput);
+        console.log("hidden2 length", hidden2.length);
+        output = addBias(output, weights.outputBias);
+        console.log("output length", output.length);
+        output = applyActivation(output);
+        console.log("output length", output.length);
+
+        return output;
+    },
+
+    numInputs: 32,
+    numHidden1: 64,
+    numHidden2: 16,
+    numOutputs: 8,
+    directionMap: { up: 1, down: -1 },
+}
                 
                 """.replace(
                 "INPUTTOHIDDEN1",
@@ -158,7 +184,8 @@ class ElevatorSaga:
                 "HIDDEN2TOOUTPUT",
                 "hidden2ToOutput: " + list_to_string(weights.hidden_2_to_output),
             )
-            .replace("OUTPUTBIAS", "outputBias: " + list_to_string(weights.output_bias))
+            .replace("OUTPUTBIAS", "outputBias: " + list_to_string(weights.output_bias)
+            )
         )
         self.driver.execute_script(
             "arguments[0].CodeMirror.setValue(arguments[1]);", code_block, new_code
@@ -186,28 +213,28 @@ class ElevatorSaga:
 
         return SimulationResult(*results)
 
-    def _init_weights(self) -> Weights:
-        # fmt: off
-        hidden_1_bias = [random.uniform(-1, 1) for _ in range(10)]
-        hidden_1_to_hidden_2 = [[random.uniform(-1, 1) for _ in range(10)] for _ in range(10)]
-        hidden_2_bias = [random.uniform(-1, 1) for _ in range(10)]
-        hidden_2_to_output = [[random.uniform(-1, 1) for _ in range(2)] for _ in range(10)]
-        input_to_hidden_1 = [[random.uniform(-1, 1) for _ in range(10)] for _ in range(13)]
-        output_bias = [random.uniform(-1, 1) for _ in range(2)]
-        # fmt: on
+    # def _init_weights(self) -> Weights:
+    #     # fmt: off
+    #     hidden_1_bias = [random.uniform(-1, 1) for _ in range(10)]
+    #     hidden_1_to_hidden_2 = [[random.uniform(-1, 1) for _ in range(10)] for _ in range(10)]
+    #     hidden_2_bias = [random.uniform(-1, 1) for _ in range(10)]
+    #     hidden_2_to_output = [[random.uniform(-1, 1) for _ in range(2)] for _ in range(10)]
+    #     input_to_hidden_1 = [[random.uniform(-1, 1) for _ in range(10)] for _ in range(13)]
+    #     output_bias = [random.uniform(-1, 1) for _ in range(2)]
+    #     # fmt: on
 
-        return Weights(
-            hidden_1_bias,
-            hidden_1_to_hidden_2,
-            hidden_2_bias,
-            hidden_2_to_output,
-            input_to_hidden_1,
-            output_bias,
-        )
+    #     return Weights(
+    #         hidden_1_bias,
+    #         hidden_1_to_hidden_2,
+    #         hidden_2_bias,
+    #         hidden_2_to_output,
+    #         input_to_hidden_1,
+    #         output_bias,
+    #     )
 
 
 if __name__ == "__main__":
     elevator_saga = ElevatorSaga()
-    elevator_saga.initialize_net()
+    # elevator_saga.initialize_net()
     elevator_saga.run_simulation()
     elevator_saga.get_result()
